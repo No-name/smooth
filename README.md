@@ -1,4 +1,4 @@
 smooth
 ======
 
-smooth will be a chart programm under the linux
+smooth will be a chart program under the linux
