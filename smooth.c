@@ -134,12 +134,10 @@ GtkWidget * smooth_initailize_tree_view()
 	return tree_view;
 }
 
-int main(int ac, char ** av)
+gboolean smooth_show_manager_panel(gpointer user_data)
 {
 	GtkWidget * window;
 	GtkWidget * tree_view;
-
-	gtk_init(&ac, &av);
 
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_widget_set_size_request(window, 300, 800);
@@ -151,6 +149,93 @@ int main(int ac, char ** av)
 	gtk_container_add(GTK_CONTAINER(window), tree_view);
 
 	gtk_widget_show_all(window);
+
+	g_message("Login success");
+
+	return FALSE;
+}
+
+void smooth_respond_login(GtkWidget * button, gpointer user_data)
+{
+	GtkWidget * account_entry = GTK_WIDGET(user_data);
+	const gchar * account = gtk_entry_get_text(GTK_ENTRY(account_entry));
+
+	g_message("Account: %s", account);
+
+	g_timeout_add(1000, smooth_show_manager_panel, NULL);
+}
+
+GtkWidget * smooth_login_panel()
+{
+	GtkWidget * window;
+	GtkWidget * vbox, * vbox_outer;
+	GtkWidget * account_entry;
+	GtkWidget * passwd_entry;
+	GtkWidget * login_button;
+	GtkWidget * cancel_button;
+	GtkWidget * button_box;
+	GtkWidget * account_label;
+	GtkWidget * passwd_label;
+	GtkWidget * grid;
+
+	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	gtk_widget_set_size_request(window, 300, 300);
+	gtk_container_set_border_width(GTK_CONTAINER(window), 5);
+	g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+
+	vbox_outer = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+
+	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+	gtk_box_pack_start(GTK_BOX(vbox_outer), vbox, TRUE, FALSE, 0);
+
+	grid = gtk_grid_new();
+	gtk_grid_set_row_spacing(GTK_GRID(grid), 5);
+	gtk_grid_set_column_spacing(GTK_GRID(grid), 10);
+
+	account_label = gtk_label_new("Account");
+	gtk_widget_set_halign(account_label, 0);
+
+	account_entry = gtk_entry_new();
+	gtk_widget_set_hexpand(account_entry, TRUE);
+
+	gtk_grid_attach(GTK_GRID(grid), account_label, 0, 0, 1, 1);
+	gtk_grid_attach(GTK_GRID(grid), account_entry, 1, 0, 1, 1);
+
+	passwd_label = gtk_label_new("Passwd");
+	gtk_widget_set_halign(passwd_label, 0);
+
+	passwd_entry = gtk_entry_new();
+	gtk_widget_set_hexpand(passwd_entry, TRUE);
+	gtk_entry_set_visibility(GTK_ENTRY(passwd_entry), FALSE);
+	
+	gtk_grid_attach(GTK_GRID(grid), passwd_label, 0, 1, 1, 1);
+	gtk_grid_attach(GTK_GRID(grid), passwd_entry, 1, 1, 1, 1);
+
+	gtk_box_pack_start(GTK_BOX(vbox), grid, FALSE, FALSE, 0);
+
+	button_box = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
+	gtk_button_box_set_layout(GTK_BUTTON_BOX(button_box), GTK_BUTTONBOX_CENTER);
+	gtk_box_set_spacing(GTK_BOX(button_box), 5);
+
+	login_button = gtk_button_new_with_label("Login");
+	gtk_box_pack_start(GTK_BOX(button_box), login_button, FALSE, FALSE, 0);
+	g_signal_connect(login_button, "clicked", G_CALLBACK(smooth_respond_login), account_entry);
+
+	cancel_button = gtk_button_new_with_label("Cancel");
+	gtk_box_pack_start(GTK_BOX(button_box), cancel_button, FALSE, FALSE, 0);
+
+	gtk_box_pack_start(GTK_BOX(vbox), button_box, FALSE, FALSE, 0);
+
+	gtk_container_add(GTK_CONTAINER(window), vbox_outer);
+
+	gtk_widget_show_all(window);
+}
+
+int main(int ac, char ** av)
+{
+	gtk_init(&ac, &av);
+
+	smooth_login_panel();
 
 	gtk_main();
 

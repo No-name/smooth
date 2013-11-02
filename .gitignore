@@ -16,3 +16,9 @@
 *.exe
 *.out
 *.app
+
+# The target
+smooth
+
+# All Hide file
+.*
