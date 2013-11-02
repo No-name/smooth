@@ -193,7 +193,7 @@ GtkWidget * smooth_login_panel()
 	gtk_grid_set_column_spacing(GTK_GRID(grid), 10);
 
 	account_label = gtk_label_new("Account");
-	gtk_widget_set_halign(account_label, 0);
+	gtk_widget_set_halign(account_label, GTK_ALIGN_START);
 
 	account_entry = gtk_entry_new();
 	gtk_widget_set_hexpand(account_entry, TRUE);
@@ -202,7 +202,7 @@ GtkWidget * smooth_login_panel()
 	gtk_grid_attach(GTK_GRID(grid), account_entry, 1, 0, 1, 1);
 
 	passwd_label = gtk_label_new("Passwd");
-	gtk_widget_set_halign(passwd_label, 0);
+	gtk_widget_set_halign(passwd_label, GTK_ALIGN_END);
 
 	passwd_entry = gtk_entry_new();
 	gtk_widget_set_hexpand(passwd_entry, TRUE);
