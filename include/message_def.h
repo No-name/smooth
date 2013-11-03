@@ -33,8 +33,9 @@ struct message_login
 };
 
 /*
- * string ===> who
- * string ===> message
+ * string ===> sender
+ * string ===> receiver
+ * string ===> msg
  */
 struct message_chart_text
 {

@@ -128,10 +128,10 @@ struct msg_str
 struct msg_chart_text
 {
 	struct msg_chart_text * next;
-	char * buffer;
 
 	struct msg_str who;
 	struct msg_str msg;
+	char buffer[0];
 };
 
 struct msg_chart_text * gpstMsgChartTextPool;
@@ -148,7 +148,6 @@ struct msg_chart_text * smooth_msg_get_chart_text_node()
 			return NULL;
 
 		gpstMsgChartTextPool->next = NULL;
-		gpstMsgChartTextPool->buffer = gpstMsgChartTextPool + sizeof(struct msg_chart_text);
 	}
 
 	//TODO here need a lock
@@ -182,9 +181,11 @@ void smooth_msg_read_msg(int sockfd)
 		case SMOOTH_MESSAGE_CHART_TEXT:
 			chart_text = smooth_msg_get_chart_text_node();
 
-			smooth_msg_read_msg_content(sockfd, chart_text->buffer, head.length);
-
 			p = chart_text->buffer;
+			memcpy(p, msg_head_buf, MESSAGE_HEAD_LEN);
+			p += MESSAGE_HEAD_LEN;
+
+			smooth_msg_read_msg_content(sockfd, p, head.length);
 
 			chart_text->who.length = ntohl(*(int *)p);
 			p += 4;
