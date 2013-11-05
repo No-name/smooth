@@ -9,6 +9,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include "smooth_lib.h"
+
 #define SMOOTH_MESSAGE_HEAD_LEN 12 
 
 #define SMOOTH_LOGIN 0

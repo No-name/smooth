@@ -98,6 +98,7 @@ int smooth_msg_initailize_chart_text_pool(int size)
 		chart_text = malloc(sizeof(msg_chart_text_t) + SMOOTH_MSG_HEAD_LEN + SMOOTH_MSG_CHART_TEXT_CONTENT_MAX_LEN);
 
 		chart_text->next = gp_chart_text_pool;
+		chart_text->p = chart_text->msg_buffer;
 
 		gp_chart_text_pool = chart_text;
 	}
@@ -386,7 +387,7 @@ int smooth_msg_process_head(struct connection * conn)
 
 void smooth_msg_parse_head(head_buffer_t * head_buf, msg_head_t * head)
 {
-	char * p;
+	char * p = head_buf->buffer;
 
 	head->version = ntohl(*(int *)p);
 	p += 4;
@@ -446,6 +447,7 @@ int smooth_manager_listen_handler()
 		}
 
 		inet_ntop(AF_INET, &addr.sin_addr, addr_buf, 64);
+
 		printf("New connection from %s:%d\n", addr_buf, ntohs(addr.sin_port));
 
 		conn = smooth_manager_get_connection();
