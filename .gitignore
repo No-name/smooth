@@ -19,6 +19,8 @@
 
 # The target
 smooth
+server
+client
 
 # All Hide file
 .*

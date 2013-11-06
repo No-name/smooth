@@ -1,7 +1,18 @@
 include ../Makefile.inc
 
-libsmooth.a:smooth_lib.o
-	ar cvr $@ $<
+TARGET = libsmooth.a
+SOURCES = smooth_lib.c smooth_msg.c
 
-smooth_lib.o:smooth_lib.c
-	gcc -c -o $@ $< -I../include
+OBJS = $(SOURCES:.c=.o)
+
+$(TARGET):$(OBJS)
+	ar cvr $@ $?
+
+#smooth_lib.o:smooth_lib.c
+
+$(OBJS):%.o:%.c
+	gcc -c -o $@ $^ -I../include
+
+.PHONY:clean
+clean:
+	-rm -rf $(TARGET) $(OBJS)

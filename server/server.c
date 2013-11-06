@@ -11,17 +11,14 @@
 #include <sys/socket.h>
 #include <sys/epoll.h>
 
+#include "smooth_msg.h"
+#include "smooth_lib.h"
+
 #define MSG_SUCCESS 			0
 #define MSG_ERR_FAILED			1
 #define MSG_ERR_AGAIN			2
 
-#define SMOOTH_MSG_LOGIN 0
-#define SMOOTH_MSG_CHART_TEXT 1
-
 #define SMOOTH_SET_FD_NONBLOCK(fd) fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)
-
-#define SMOOTH_MSG_HEAD_LEN 12
-#define SMOOTH_MSG_CHART_TEXT_CONTENT_MAX_LEN 1024
 
 #define SMOOTH_HOST_DEFAULT "127.0.0.1"
 #define SMOOTH_PORT_DEFAULT 45000
@@ -129,7 +126,11 @@ void smooth_msg_free_chart_text(msg_chart_text_t * chart_text)
 
 struct msg_login * smooth_msg_get_login()
 {
-	return malloc(sizeof(struct msg_login));
+	struct msg_login * login;
+	login = malloc(sizeof(struct msg_login) + SMOOTH_MSG_CHART_TEXT_CONTENT_MAX_LEN);
+	login->p = login->msg_buffer;
+
+	return login;
 }
 
 struct connection * smooth_manager_get_connection()
@@ -203,7 +204,22 @@ void smooth_msg_manager_transfor_chart_text(msg_chart_text_t * chart_text)
 
 void smooth_msg_manager_process_login(struct connection * conn)
 {
+	struct msg_login * login = conn->content;
 
+	char * p;
+	char back;
+
+	p = login->account.data + login->account.length;
+	back = *p;
+	*p = '\0';
+	printf("Account:%s\n", login->account.data);
+	*p = back;
+
+	p = login->passwd.data + login->passwd.length;
+	back = *p;
+	*p = '\0';
+	printf("Passwd:%s\n", login->passwd.data);
+	*p = back;
 }
 
 void smooth_msg_parse_chart_text(msg_chart_text_t * chart_text)
@@ -369,11 +385,11 @@ int smooth_msg_process_head(struct connection * conn)
 			login = smooth_msg_get_login();
 
 			conn->content = login;
-			memcpy(chart_text->p, conn->head.buffer, SMOOTH_MSG_HEAD_LEN);
-			chart_text->p += SMOOTH_MSG_HEAD_LEN;
+			memcpy(login->p, conn->head.buffer, SMOOTH_MSG_HEAD_LEN);
+			login->p += SMOOTH_MSG_HEAD_LEN;
 
-			chart_text->left = head.length;
-			chart_text->content = chart_text->p;
+			login->left = head.length;
+			login->content = login->p;
 
 			conn->handler = smooth_msg_login_handler;
 

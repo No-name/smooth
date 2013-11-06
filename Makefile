@@ -1,17 +1,24 @@
-smooth:smooth.c
-	cc -o $@ $< `pkg-config --cflags --libs gtk+-3.0`
+.PHONY:all
+all: client server
 
-.PHONY:client
 client:lib
-	cd client && make client
+	make -C client
 
-.PHONY:server
 server:lib
-	cd server && make server
+	make -C server
 
 .PHONY:lib
 lib:
-	cd lib && make libsmooth.a
+	make -C lib
+
+.PHONY:clean
+clean:
+	make -C lib clean
+	make -C client clean
+	make -C server clean
+
+smooth:smooth.c
+	cc -o $@ $< `pkg-config --cflags --libs gtk+-3.0`
 
 .PHONY:run
 

@@ -10,13 +10,7 @@
 #include <sys/socket.h>
 
 #include "smooth_lib.h"
-
-#define SMOOTH_MESSAGE_HEAD_LEN 12 
-
-#define SMOOTH_LOGIN 0
-#define SMOOTH_MESSAGE_CHART_TEXT 1
-
-#define SMOOTH_CHART_MESSAGE_BUFFER_MAX_LEN 1024
+#include "smooth_msg.h"
 
 #define SMOOTH_MSG_DEFAULT_HOST_IP "127.0.0.1"
 #define SMOOTH_MSG_DEFAULT_PORT 45000
@@ -85,61 +79,6 @@ int smooth_msg_pack_head(char * buffer, int version, int type, int length)
 	return p - buffer;
 }
 
-int smooth_msg_pack_login(char * buffer, char * account, char * passwd)
-{
-	char * p;
-	int len;
-
-	p = buffer;
-
-	len = strlen(account);
-	*(int *)p = htonl(len);
-	p += 4;
-
-	memcpy(p, account, len);
-	p += len;
-
-	len = strlen(passwd);
-	*(int *)p = htonl(len);
-	p += 4;
-
-	memcpy(p, passwd, len);
-	p += len;
-
-	return p - buffer;
-}
-
-int smooth_msg_pack_chart_text(char * buffer, char * from, char * to, char * msg)
-{
-	char * p;
-	int len;
-
-	p = buffer;
-
-	len = strlen(from);
-	*(int *)p = htonl(len);
-	p += 4;
-
-	memcpy(p, from, len);
-	p += len;
-
-	len = strlen(to);
-	*(int *)p = htonl(len);
-	p += 4;
-
-	memcpy(p, to, len);
-	p += len;
-
-	len = strlen(msg);
-	*(int *)p = htonl(len);
-	p += 4;
-
-	memcpy(p, msg, len);
-	p += len;
-
-	return p - buffer;
-}
-
 /*
  * function only can be used in client side,
  * as the read routine maybe blocked
@@ -147,7 +86,7 @@ int smooth_msg_pack_chart_text(char * buffer, char * from, char * to, char * msg
 void smooth_msg_read_msg_head(int sockfd, char * buffer, struct msg_head * head)
 {
 	char * p;
-	int left = SMOOTH_MESSAGE_HEAD_LEN;
+	int left = SMOOTH_MSG_HEAD_LEN;
 	int rbyte;
 
 	p = buffer;
@@ -200,7 +139,7 @@ int smooth_msg_initailize_chart_text_pool(int size)
 
 	for (i = 0; i < size; ++i)
 	{
-		chart_text = malloc(sizeof(struct msg_chart_text) + SMOOTH_MESSAGE_HEAD_LEN + SMOOTH_CHART_MESSAGE_BUFFER_MAX_LEN);
+		chart_text = malloc(sizeof(struct msg_chart_text) + SMOOTH_MSG_HEAD_LEN + SMOOTH_MSG_CHART_TEXT_CONTENT_MAX_LEN);
 
 		assert(chart_text && "chart text struct alloc failed");
 
@@ -239,18 +178,18 @@ void smooth_msg_read_msg(int sockfd)
 	int rbyte;
 	struct msg_head head;
 	struct msg_chart_text * chart_text;
-	char msg_head_buf[SMOOTH_MESSAGE_HEAD_LEN];
+	char msg_head_buf[SMOOTH_MSG_HEAD_LEN];
 
 	smooth_msg_read_msg_head(sockfd, msg_head_buf, &head);
 
 	switch (head.type)
 	{
-		case SMOOTH_MESSAGE_CHART_TEXT:
+		case SMOOTH_MSG_CHART_TEXT:
 			chart_text = smooth_msg_get_chart_text_node();
 
 			p = chart_text->buffer;
-			memcpy(p, msg_head_buf, SMOOTH_MESSAGE_HEAD_LEN);
-			p += SMOOTH_MESSAGE_HEAD_LEN;
+			memcpy(p, msg_head_buf, SMOOTH_MSG_HEAD_LEN);
+			p += SMOOTH_MSG_HEAD_LEN;
 
 			smooth_msg_read_msg_content(sockfd, p, head.length);
 
@@ -323,10 +262,12 @@ int main()
 	int input_count;
 	int len;
 
+	char * passwd, * account;
+
 	char * msg_from = "Bob";
 	char * msg_to = "Alice";
 
-	char msg_buffer[SMOOTH_CHART_MESSAGE_BUFFER_MAX_LEN];
+	char msg_buffer[SMOOTH_MSG_CHART_TEXT_CONTENT_MAX_LEN];
 	char * p;
 
 	smooth_msg_initailize_chart_text_pool(20);
@@ -347,10 +288,21 @@ int main()
 
 		line[input_count - 1] = '\0';
 
-		len = smooth_msg_pack_chart_text(msg_buffer + SMOOTH_MESSAGE_HEAD_LEN, msg_from, msg_to, line);
+		account = line;
+		p = account;
+		while (*p++ != ' ');
+		passwd = p;
+		p[-1] = '\0';
+		printf("account: %s passwd:%s\n", account, passwd);
 
-		smooth_msg_pack_head(msg_buffer, 1, SMOOTH_MESSAGE_CHART_TEXT, len);
+		//len = smooth_msg_pack_chart_text(msg_buffer + SMOOTH_MESSAGE_HEAD_LEN, msg_from, msg_to, line);
 
-		write(sockfd_conn, msg_buffer, len + SMOOTH_MESSAGE_HEAD_LEN);
+		len = smooth_msg_pack_login(msg_buffer + SMOOTH_MSG_HEAD_LEN, account, passwd);
+
+		smooth_msg_pack_head(msg_buffer, 1, SMOOTH_MSG_LOGIN, len);
+
+		write(sockfd_conn, msg_buffer, len + SMOOTH_MSG_HEAD_LEN);
+
+		smooth_lib_present_buf(msg_buffer, len + SMOOTH_MSG_HEAD_LEN);
 	}
 }
